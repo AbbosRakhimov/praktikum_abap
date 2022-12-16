@@ -85,7 +85,7 @@ ENDMETHOD.
 *& Check if there is a reference to the category id from the products table
 **********************************************************************
     SELECT SINGLE *
-      FROM /uniq/at_prd
+      FROM /uniq/at_prd "sdggergreg
       INTO CORRESPONDING FIELDS OF @ls_prd
      WHERE categoryid = @ls_keys-categoryid.
 
