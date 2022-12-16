@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_DTEL" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <DD04V>
+    <ROLLNAME>/UNIQ/TOP</ROLLNAME>
+    <DDLANGUAGE>D</DDLANGUAGE>
+    <SCRLEN1>04</SCRLEN1>
+    <SCRLEN2>07</SCRLEN2>
+    <SCRLEN3>29</SCRLEN3>
+    <DDTEXT>Datenelement für Top</DDTEXT>
+    <SCRTEXT_S>Date</SCRTEXT_S>
+    <SCRTEXT_M>DatenTo</SCRTEXT_M>
+    <SCRTEXT_L>DAtenelement für Top variable</SCRTEXT_L>
+    <DTELMASTER>D</DTELMASTER>
+    <DATATYPE>STRG</DATATYPE>
+   </DD04V>
+  </asx:values>
+ </asx:abap>
+</abapGit>

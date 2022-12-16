@@ -1,0 +1,50 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>/UNIQ/CL_SHOW_SUP_PROJ</CLSNAME>
+    <LANGU>D</LANGU>
+    <DESCRIPT>Klasse für Supplier Methode Sammlung</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Record for category ID in category table does not exist</ENTRY>
+     <LENGTH>110</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>Record for supplier ID in supplier table does not exist</ENTRY>
+     <LENGTH>110</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Records for category ID and supplier ID in category table and supplier table do not exist</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+   </TPOOL>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>/UNIQ/CL_SHOW_SUP_PROJ</CLSNAME>
+     <CMPNAME>ADD_PRD_TOTALAMOUNT_FOR_SUP</CMPNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>addiert alle totalamount für jeder Supplier</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>/UNIQ/CL_SHOW_SUP_PROJ</CLSNAME>
+     <CMPNAME>GET_ALL_NUM_OF_PRD_FOR_SUP</CMPNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Gibt Anzahl der producte, die dieser Supplier hat</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

@@ -1,0 +1,95 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_PROG" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <PROGDIR>
+    <NAME>/UNIQ/KST_SHOW_WITH_ALV</NAME>
+    <SUBC>1</SUBC>
+    <RLOAD>D</RLOAD>
+    <FIXPT>X</FIXPT>
+    <UCCHECK>X</UCCHECK>
+   </PROGDIR>
+   <TPOOL>
+    <item>
+     <ID>H</ID>
+     <KEY>001</KEY>
+     <ENTRY>Kostenrech-kreis   Kostenstelle  Buchungskreis  Geschäftsbereich  Verantwort-Benutzer    Währungsschlüssel   Datum gültig ab  Datum gültig bis   Beschreibung           Vollständige Beschreibung               KostenstellenartNumUndName</ENTRY>
+     <LENGTH>234</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Buchungskreis is Pflichtfeld!</ENTRY>
+     <LENGTH>48</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>123</KEY>
+     <ENTRY>Bitte wählen Sie die Buchungskreis aus</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>R</ID>
+     <ENTRY>Kostenstelle anzeigen</ENTRY>
+     <LENGTH>21</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_BUKRS</KEY>
+     <ENTRY>.</ENTRY>
+     <LENGTH>21</LENGTH>
+     <SPLIT>D</SPLIT>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_KOKRS</KEY>
+     <ENTRY>Kostenrechnungskreis</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>P_SPRACH</KEY>
+     <ENTRY>Sprache</ENTRY>
+     <LENGTH>15</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_ART</KEY>
+     <ENTRY>Art der Kostenstelle</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>S</ID>
+     <KEY>S_DATUM</KEY>
+     <ENTRY>Datum</ENTRY>
+     <LENGTH>13</LENGTH>
+    </item>
+    <item>
+     <ID>T</ID>
+     <ENTRY> Kostenstelle anzeigen</ENTRY>
+     <LENGTH>22</LENGTH>
+    </item>
+   </TPOOL>
+   <I18N_TPOOL>
+    <item>
+     <LANGUAGE>E</LANGUAGE>
+     <TEXTPOOL>
+      <item>
+       <ID>H</ID>
+       <KEY>001</KEY>
+       <ENTRY>Cost Center    Owner            User                                                                                               Valid until date   yyyy(en)sxxx</ENTRY>
+       <LENGTH>255</LENGTH>
+      </item>
+      <item>
+       <ID>S</ID>
+       <KEY>P_BUKRS</KEY>
+       <ENTRY>.</ENTRY>
+       <LENGTH>21</LENGTH>
+       <SPLIT>D</SPLIT>
+      </item>
+     </TEXTPOOL>
+    </item>
+   </I18N_TPOOL>
+  </asx:values>
+ </asx:abap>
+</abapGit>

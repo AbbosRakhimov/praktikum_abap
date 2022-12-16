@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_DTEL" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <DD04V>
+    <ROLLNAME>/UNIQ/ZW_ZAHL</ROLLNAME>
+    <DDLANGUAGE>D</DDLANGUAGE>
+    <SCRLEN1>07</SCRLEN1>
+    <SCRLEN2>11</SCRLEN2>
+    <SCRLEN3>31</SCRLEN3>
+    <DDTEXT>Zweite_zahl_für_taschenrechrechner</DDTEXT>
+    <SCRTEXT_S>zw_zahl</SCRTEXT_S>
+    <SCRTEXT_M>zweite_zahl</SCRTEXT_M>
+    <SCRTEXT_L>zweite_zahl_für_taschenrechener</SCRTEXT_L>
+    <DTELMASTER>D</DTELMASTER>
+    <DATATYPE>INT4</DATATYPE>
+    <LENG>000010</LENG>
+    <OUTPUTLEN>000011</OUTPUTLEN>
+   </DD04V>
+  </asx:values>
+ </asx:abap>
+</abapGit>

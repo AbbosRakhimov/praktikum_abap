@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>/UNIQ/CL_SHOW_KST</CLSNAME>
+    <LANGU>D</LANGU>
+    <DESCRIPT>Klasse für Kostenstelleanzeigen</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>/UNIQ/CL_SHOW_KST</CLSNAME>
+     <CMPNAME>GET_KOSTL_INSTANZ_METHODE</CMPNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Holt Kostenstellen</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>/UNIQ/CL_SHOW_KST</CLSNAME>
+     <CMPNAME>GET_KOSTL_STATIC_METHODE</CMPNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Holt Kostenstellen</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>/UNIQ/CL_SHOW_KST</CLSNAME>
+     <CMPNAME>GET_SINGLE_KOSTENSTELLE</CMPNAME>
+     <LANGU>D</LANGU>
+     <DESCRIPT>Gibt Kostanatellen nach eingegebenen Parameter</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
