@@ -48,10 +48,9 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
        INTO CORRESPONDING FIELDS OF  @ls_entity
       WHERE personid = @ls_pers-personid.
 
-      CONCATENATE ls_entity-street ls_entity-city ls_entity-postcode ls_entity-country ls_entity-homenumber INTO ls_adresse RESPECTING BLANKS.
 
       MOVE-CORRESPONDING ls_entity TO er_entity.
-      MOVE-CORRESPONDING ls_adresse TO er_entity-adresse.
+      MOVE-CORRESPONDING ls_entity TO er_entity-adresse.
 
     ELSEIF ls_pers IS INITIAL.
 
@@ -107,11 +106,9 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
 
 
-    DATA: lv_order_by               TYPE string,
-          ls_adresse                TYPE /uniq/persons_gw_s_pers-adresse,
-          ls_entityset_ad           LIKE LINE OF et_entityset,
-          lv_query_contains_adresse TYPE boolean VALUE abap_false,
-          lv_count_query            TYPE i VALUE 0.
+    DATA: lv_order_by     TYPE string,
+          ls_adresse      TYPE /uniq/persons_gw_s_pers-adresse,
+          ls_entityset_ad LIKE LINE OF et_entityset.
 
 ********************************Lokale Struktur**************************************
     DATA: BEGIN OF ls_entityset,
@@ -154,36 +151,15 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 **********************************************************************
 *& checks whether the query parameter contains Adresse
 **********************************************************************
-    LOOP AT mr_request_details->t_uri_query_parameter INTO DATA(ls_param) WHERE value CS 'Adresse'.
-      lv_query_contains_adresse = abap_true.
-      DATA(lv_query_name) = ls_param-name.
-      lv_count_query = lv_count_query + 1.
-      "      EXIT.
-    ENDLOOP.
-    IF lv_query_contains_adresse = abap_true.
-      IF lv_query_name = '$filter' AND lv_count_query EQ 1.
-        lv_sql_where = |( { substring_after( val = lv_sql_where sub = 'ADRESSE-' ) }|.
-
-      ELSEIF lv_query_name = '$orderby' AND lv_count_query EQ 1 .
-        LOOP AT it_order INTO ls_order.
-          lv_order_by = COND string( WHEN  ls_order-order  = `desc`
-                           THEN |, { substring_after( val = lv_order_by sub = 'Adresse-' ) }|
-                        ELSE |, { substring_after( val = lv_order_by sub = 'Adresse-' ) }| ).
-        ENDLOOP.
-
-        SHIFT lv_order_by BY 2 PLACES LEFT.
-
-      ELSEIF lv_count_query EQ 2.
-        lv_sql_where = |( { substring_after( val = lv_sql_where sub = 'ADRESSE-' ) }|.
-        LOOP AT it_order INTO ls_order.
-          lv_order_by = COND string( WHEN  ls_order-order  = `desc`
-                           THEN |, { substring_after( val = lv_order_by sub = 'Adresse-' ) }|
-                        ELSE |, { substring_after( val = lv_order_by sub = 'Adresse-' ) }| ).
-        ENDLOOP.
-
-        SHIFT lv_order_by BY 2 PLACES LEFT.
-      ENDIF.
-    ENDIF.
+    /uniq/cl_help_for_persons=>truncate_sting(
+      EXPORTING
+        iv_sql_where           = lv_sql_where
+        iv_order_by            = lv_order_by
+        it_uri_query_parameter = mr_request_details->t_uri_query_parameter
+      IMPORTING
+        ev_sql_where           = lv_sql_where
+        ev_order_by            = lv_order_by
+    ).
 
 ****************************Select******************************************
     SELECT *
@@ -193,28 +169,40 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
      WHERE (lv_sql_where)
      ORDER BY (lv_order_by).
 
+**********************************************************************
+    """"" ACHTUNG: INLINECOUNT muss unabhängig von TOP/SKIP Anzahl aller Elemente liefern
+    """"" ACHTUNG: aber filter berücksichtigen!
+    IF io_tech_request_context->has_inlinecount( ) = abap_true AND lv_sql_where IS INITIAL.
+      SELECT COUNT( * )
+          FROM /uniq/at_pers
+          INTO @DATA(lv_count).
+      es_response_context-inlinecount = lv_count.
+    ELSEIF io_tech_request_context->has_inlinecount( ) = abap_true AND lv_sql_where IS NOT INITIAL.
+      SELECT COUNT( * )
+          FROM /uniq/at_pers
+          INTO lv_count
+        WHERE (lv_sql_where).
+      es_response_context-inlinecount = lv_count.
+    ELSE.
+      CLEAR es_response_context-inlinecount.
+    ENDIF.
+**********************************************************************
+***********************************************************************
+    IF NOT lv_skip IS INITIAL.
+      DELETE lt_entityset TO lv_skip.
+    ENDIF.
+
+**********************************************************************
+
 ****************************Insert Data to et_entityset*******************************************
     LOOP AT lt_entityset INTO ls_entityset.
-*      ls_entityset_ad-firstname   = ls_entityset-firstname.
-*      ls_entityset_ad-lastname    = ls_entityset-lastname.
-*      ls_entityset_ad-email       = ls_entityset-email.
-*      ls_entityset_ad-dateofbirth = ls_entityset-dateofbirth.
-      MOVE-CORRESPONDING ls_entityset TO ls_entityset_ad.
 
-*      ls_entityset_ad-adresse-street     = ls_entityset-street.
-*      ls_entityset_ad-adresse-city       = ls_entityset-city.
-*      ls_entityset_ad-adresse-postcode   = ls_entityset-postcode.
-*      ls_entityset_ad-adresse-country    = ls_entityset-country.
-*      ls_entityset_ad-adresse-homenumber = ls_entityset-homenumber.
+      MOVE-CORRESPONDING ls_entityset TO ls_entityset_ad.
       MOVE-CORRESPONDING ls_entityset TO ls_entityset_ad-adresse.
 
       APPEND ls_entityset_ad TO et_entityset.
 *      wait UP TO 1 SECONDS.
     ENDLOOP.
-
-
-
-
 
 
 *    LOOP AT lt_entityset INTO ls_entityset.
@@ -228,28 +216,6 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 *
 *    ENDLOOP.
 
-
-
-
-
-
-
-***********************************************************************
-    IF NOT lv_skip IS INITIAL.
-      DELETE et_entityset TO lv_skip.
-    ENDIF.
-**********************************************************************
-    """"" ACHTUNG: INLINECOUNT muss unabhängig von TOP/SKIP Anzahl aller Elemente liefern
-    """"" ACHTUNG: aber filter berücksichtigen!
-    IF io_tech_request_context->has_inlinecount( ) = abap_true.
-      DESCRIBE TABLE et_entityset LINES es_response_context-inlinecount.
-    ELSE.
-      CLEAR es_response_context-inlinecount.
-    ENDIF.
-**********************************************************************
-
-
-**********************************************************************
 *    SELECT pr~personid, pr~fristname, pr~lastname, pr~dateofbirt, pr~email,
 *           ad~street, ad~city, ad~postcalcode, ad~country, ad~homenumber, ad~adressid
 *     FROM               /uniq/at_pers AS pr
