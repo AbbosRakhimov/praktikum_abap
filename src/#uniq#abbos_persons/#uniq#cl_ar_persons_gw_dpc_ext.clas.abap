@@ -6,9 +6,15 @@ class /UNIQ/CL_AR_PERSONS_GW_DPC_EXT definition
 public section.
 protected section.
 
-  methods PERSONSET_GET_ENTITYSET
+  methods PERSONSET_CREATE_ENTITY
+    redefinition .
+  methods PERSONSET_DELETE_ENTITY
     redefinition .
   methods PERSONSET_GET_ENTITY
+    redefinition .
+  methods PERSONSET_GET_ENTITYSET
+    redefinition .
+  methods PERSONSET_UPDATE_ENTITY
     redefinition .
 private section.
 ENDCLASS.
@@ -16,6 +22,95 @@ ENDCLASS.
 
 
 CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
+
+
+  METHOD personset_create_entity.
+
+    DATA : ls_pers_db TYPE /uniq/at_pers.
+
+
+    DATA: BEGIN OF ls_entity,
+            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
+            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
+            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
+            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
+            email       TYPE /uniq/persons_gw_s_pers-email,
+            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
+            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
+            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
+            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
+            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
+
+          END OF ls_entity.
+
+    io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
+
+**********************************************************************
+*& gets the last person id from the database
+**********************************************************************
+    SELECT MAX( personid ) FROM /uniq/at_pers INTO @DATA(lv_pers_id).
+
+    MOVE-CORRESPONDING er_entity TO ls_entity.
+    ls_entity-personid = lv_pers_id + 1.
+    MOVE-CORRESPONDING er_entity-adresse TO ls_entity.
+    MOVE-CORRESPONDING ls_entity TO ls_pers_db.
+
+    INSERT /uniq/at_pers FROM ls_pers_db.
+
+    IF sy-subrc <> 0.
+
+      mo_context->get_message_container( )->add_message_text_only(
+        EXPORTING
+          iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+          iv_msg_text               = TEXT-002
+          iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+          iv_entity_type            = iv_entity_name ).
+
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+        EXPORTING
+          message_container = mo_context->get_message_container( ).
+    ENDIF.
+  ENDMETHOD.
+
+
+  METHOD personset_delete_entity.
+
+    DATA: ls_keys TYPE /uniq/persons_gw_s_pers.
+
+    io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_keys ).
+
+**********************************************************************
+*& Check if there is a record exist to the category id in the category table
+**********************************************************************
+    SELECT SINGLE @abap_true
+      FROM /uniq/at_pers
+      INTO @DATA(lv_pers_exists)
+     WHERE personid = @ls_keys-personid.
+
+    IF lv_pers_exists = abap_true.
+
+      DELETE FROM /uniq/at_pers WHERE personid = ls_keys-personid.
+
+      IF  sy-subrc <> 0.
+        mo_context->get_message_container( )->add_message_text_only(
+          EXPORTING
+            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+            iv_msg_text               = TEXT-003
+            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+            iv_entity_type            = iv_entity_name ).
+
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+          EXPORTING
+            message_container = mo_context->get_message_container( ).
+      ENDIF.
+    ELSE.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid  = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message = TEXT-004.
+    ENDIF.
+  ENDMETHOD.
 
 
   METHOD personset_get_entity.
@@ -260,5 +355,73 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
 **********************************************************************************************************
 
+  ENDMETHOD.
+
+
+  METHOD personset_update_entity.
+
+    DATA: ls_keys   LIKE er_entity,
+          ls_pers_db TYPE /uniq/at_pers.
+
+    DATA: BEGIN OF ls_entity,
+            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
+            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
+            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
+            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
+            email       TYPE /uniq/persons_gw_s_pers-email,
+            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
+            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
+            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
+            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
+            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
+
+          END OF ls_entity.
+
+    io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
+
+    io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_keys ).
+
+**********************************************************************
+*& categoryid is primary key and may NOT be changed, so we overwrite by key from URL Segment
+**********************************************************************
+    er_entity-personid = ls_keys-personid.
+
+**********************************************************************
+*& Check if there is a record exist to the category id in the category table
+**********************************************************************
+
+    SELECT SINGLE @abap_true
+      FROM /uniq/at_pers
+      INTO @DATA(lv_pers_exists)
+     WHERE personid = @ls_keys-personid.
+
+    IF  lv_pers_exists = abap_true.
+
+      MOVE-CORRESPONDING er_entity TO ls_entity.
+      MOVE-CORRESPONDING er_entity-adresse TO ls_entity.
+      MOVE-CORRESPONDING ls_entity TO ls_pers_db.
+
+      UPDATE /uniq/at_pers FROM ls_pers_db.
+
+      IF sy-subrc <> 0.
+        mo_context->get_message_container( )->add_message_text_only(
+          EXPORTING
+            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+            iv_msg_text               = TEXT-002
+            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+            iv_entity_type            = iv_entity_name ).
+
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+          EXPORTING
+            message_container = mo_context->get_message_container( ).
+      ENDIF.
+
+    ELSE.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-004.
+    ENDIF.
   ENDMETHOD.
 ENDCLASS.

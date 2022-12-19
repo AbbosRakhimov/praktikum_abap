@@ -46,8 +46,8 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
 
 METHOD categoryset_create_entity.
 
-  DATA : ls_cat_db TYPE /uniq/at_cat,
-         ls_cat    LIKE er_entity.
+  DATA : ls_cat_db TYPE /uniq/at_cat.
+         "ls_cat    LIKE er_entity.
 
   io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
 
@@ -84,31 +84,31 @@ ENDMETHOD.
 **********************************************************************
 *& Check if there is a reference to the category id from the products table
 **********************************************************************
-    SELECT SINGLE *
-      FROM /uniq/at_prd "sdggergreg
-      INTO CORRESPONDING FIELDS OF @ls_prd
+    SELECT SINGLE @abap_true
+      FROM /uniq/at_prd
+      INTO @DATA(lv_prd_exists)
      WHERE categoryid = @ls_keys-categoryid.
 
 **********************************************************************
 *& if there is a reference to the category id from the products table, than throw business execption
 **********************************************************************
-    IF ls_prd IS NOT INITIAL.
+    IF lv_prd_exists = abap_true.
 
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
           textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = Text-009.
+          message = TEXT-009.
     ELSE.
 
 **********************************************************************
 *& Check if there is a record exist to the category id in the category table
 **********************************************************************
-      SELECT SINGLE *
+      SELECT SINGLE @abap_true
         FROM /uniq/at_cat
-        INTO @DATA(ls_cat)
+        INTO @DATA(lv_cat_exists)
        WHERE categoryid = @ls_keys-categoryid.
 
-      IF ls_cat IS   NOT INITIAL.
+      IF lv_cat_exists = abap_true.
 
         DELETE FROM /uniq/at_cat WHERE categoryid = ls_keys-categoryid.
 
@@ -312,12 +312,14 @@ ENDMETHOD.
 **********************************************************************
 *& Check if there is a record exist to the product id in the product table
 **********************************************************************
-    SELECT SINGLE *
+**********************************************************************
+**********************************************************************
+    SELECT SINGLE @abap_true
       FROM /uniq/at_prd
-      INTO @DATA(ls_prd)
+      INTO @DATA(lv_prd_exists)
      WHERE productid = @ls_keys-productid.
 
-    IF ls_prd IS   NOT INITIAL.
+    IF lv_prd_exists = abap_true.
 
       DELETE FROM /uniq/at_prd WHERE productid = ls_keys-productid.
 
@@ -546,34 +548,35 @@ ENDMETHOD.
 **********************************************************************
 *& Check if there is a reference to the supplier id from the products table
 **********************************************************************
-    SELECT SINGLE *
+
+    SELECT SINGLE @abap_true
      FROM /uniq/at_prd
-     INTO CORRESPONDING FIELDS OF @ls_prd
+     INTO @DATA(lv_prd_exists)
     WHERE supplierid = @ls_keys-supplierid.
 
 **********************************************************************
 *& if there is a reference to the supplier id from the products table, than throw business execption
 **********************************************************************
-    IF ls_prd IS NOT INITIAL.
+    IF lv_prd_exists = abap_true.
 
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
           textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = text-009.
+          message = TEXT-009.
     ELSE.
 
 **********************************************************************
 *& Check if there is a record exist to the supplier id in the supplier table
 **********************************************************************
-      SELECT SINGLE *
+      SELECT SINGLE @abap_true
         FROM /uniq/at_sup
-        INTO @DATA(ls_sup)
+        INTO @DATA(lv_sup_exists)
        WHERE supplierid = @ls_keys-supplierid.
 
 **********************************************************************
 *& if there is a record exist to the supplier id in the supplier table
 **********************************************************************
-      IF ls_sup IS   NOT INITIAL.
+      IF lv_sup_exists = abap_true.
 
         DELETE FROM /uniq/at_sup WHERE supplierid = ls_keys-supplierid.
 

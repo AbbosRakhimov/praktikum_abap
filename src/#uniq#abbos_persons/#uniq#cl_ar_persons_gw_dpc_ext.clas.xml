@@ -24,6 +24,18 @@
      <ENTRY>Technical error occurred</ENTRY>
      <LENGTH>48</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Delete failed</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>004</KEY>
+     <ENTRY>Update failed: There are no Person with info you provided</ENTRY>
+     <LENGTH>88</LENGTH>
+    </item>
    </TPOOL>
   </asx:values>
  </asx:abap>
