@@ -4,6 +4,11 @@ class /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT definition
   create public .
 
 public section.
+
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_STREAM
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM
+    redefinition .
 protected section.
 
   methods CATEGORYSET_CREATE_ENTITY
@@ -17,6 +22,8 @@ protected section.
   methods CATEGORYSET_UPDATE_ENTITY
     redefinition .
   methods PRODUCTSET_CREATE_ENTITY
+    redefinition .
+  methods PRODUCTSET_DELETE_ENTITY
     redefinition .
   methods PRODUCTSET_GET_ENTITY
     redefinition .
@@ -34,14 +41,45 @@ protected section.
     redefinition .
   methods SUPPLIERSET_UPDATE_ENTITY
     redefinition .
-  methods PRODUCTSET_DELETE_ENTITY
-    redefinition .
 private section.
 ENDCLASS.
 
 
 
 CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~create_stream.
+
+    DATA(ls_media) = is_media_resource.
+    DATA(ls_image) = VALUE /uniq/at_prd( filename = iv_slug
+                                      mimitype = is_media_resource-mime_type
+                                      value    = is_media_resource-value ).
+
+*  MODIFY zjp_image FROM @ls_image.
+
+*  copy_data_to_ref( EXPORTING is_data = ls_image
+*                    CHANGING  cr_data = er_entity ).
+
+  ENDMETHOD.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~get_stream.
+
+    DATA : ls_media TYPE ty_s_media_resource.
+    ls_media-value = '552D4E4951'. " cl_abap_codepage=>convert_to( source = 'U-NIQ' ).
+    ls_media-mime_type = 'text/plain'.
+*    DATA(lt_keys) = io_tech_request_context->get_keys( ).
+*    DATA(lv_productid) = VALUE #( lt_keys[ name = 'PRODUCTID' ]-value OPTIONAL ).
+
+   copy_data_to_ref(
+     exporting
+       is_data = ls_media
+     changing
+       cr_data = er_stream
+   ).
+
+  ENDMETHOD.
 
 
 METHOD categoryset_create_entity.
@@ -187,7 +225,6 @@ ENDMETHOD.
 **********************************************************************
 *& will get all Categories
 **********************************************************************
-
     /uniq/cl_show_sup_proj=>get_all_categories(
             EXPORTING
               iv_sql_where        = io_tech_request_context->get_osql_where_clause( )
@@ -356,8 +393,29 @@ ENDMETHOD.
 
     SELECT SINGLE *
       FROM /uniq/at_prd
-    INTO CORRESPONDING FIELDS OF @er_entity
-    WHERE productid = @ls_prd-productid.
+      INTO CORRESPONDING FIELDS OF @er_entity
+     WHERE productid = @ls_prd-productid.
+
+*    hat aktueller Benutzer
+*     - LESE Berechtigung auf die
+*     - Categorie des angeforderten Produktes
+
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+         ID 'ACTVT'      FIELD '03' " LESEN
+         ID 'CATEGORYID' FIELD er_entity-categoryid.
+
+    IF sy-subrc = 0.
+      " aktueller benutzer DARF dieses Produkt        sehen
+    ELSE.
+      " aktueller benutzer DARF dieses Produkt NICHHT sehen
+
+
+      CLEAR er_entity.
+      RETURN.
+
+
+    ENDIF.
+
 
 
     /uniq/cl_show_sup_proj=>calculate_poduct_totalamount(

@@ -6,9 +6,7 @@ class /UNIQ/CL_ABBOS_SUPPLIE_MPC definition
 public section.
 
   types:
-     TS_CATEGORY type /UNIQ/SUPPLIER_GW_S_CAT .
-  types:
-TT_CATEGORY type standard table of TS_CATEGORY .
+      IMAGE type /UNIQ/SUPP_GW_S_PRDBILD_COMPLX .
   types:
    begin of ts_text_element,
       artifact_name  type c length 40,       " technical name
@@ -20,6 +18,10 @@ TT_CATEGORY type standard table of TS_CATEGORY .
   types:
          tt_text_elements type standard table of ts_text_element with key text_symbol .
   types:
+     TS_CATEGORY type /UNIQ/SUPPLIER_GW_S_CAT .
+  types:
+TT_CATEGORY type standard table of TS_CATEGORY .
+  types:
      TS_SUPPLIER type /UNIQ/SUPPLIER_GW_S_SUP .
   types:
 TT_SUPPLIER type standard table of TS_SUPPLIER .
@@ -27,9 +29,15 @@ TT_SUPPLIER type standard table of TS_SUPPLIER .
      TS_PRODUCT type /UNIQ/SUPPLIER_GW_S_PRD .
   types:
 TT_PRODUCT type standard table of TS_PRODUCT .
+  types:
+     TS_PRODUCT_IMAGE type /UNIQ/SUPPLIER_GW_S_PRD_BILD .
+  types:
+TT_PRODUCT_IMAGE type standard table of TS_PRODUCT_IMAGE .
 
   constants GC_CATEGORY type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Category' ##NO_TEXT.
+  constants GC_IMAGE type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Image' ##NO_TEXT.
   constants GC_PRODUCT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Product' ##NO_TEXT.
+  constants GC_PRODUCT_IMAGE type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Product_Image' ##NO_TEXT.
   constants GC_SUPPLIER type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Supplier' ##NO_TEXT.
 
   methods LOAD_TEXT_ELEMENTS
@@ -48,6 +56,9 @@ private section.
 
   constants GC_INCL_NAME type STRING value '/UNIQ/CL_ABBOS_SUPPLIE_MPC====CP' ##NO_TEXT.
 
+  methods DEFINE_COMPLEXTYPES
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
   methods DEFINE_CATEGORY
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
@@ -55,6 +66,9 @@ private section.
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
   methods DEFINE_PRODUCT
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_PRODUCT_IMAGE
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
   methods DEFINE_ASSOCIATIONS
@@ -78,9 +92,11 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_MPC IMPLEMENTATION.
 
 model->set_schema_namespace( 'UNIQ.ABBOS_SUPPLIER_GW_SRV' ).
 
+define_complextypes( ).
 define_category( ).
 define_supplier( ).
 define_product( ).
+define_product_image( ).
 define_associations( ).
   endmethod.
 
@@ -250,6 +266,59 @@ lo_entity_set->set_filter_required( abap_false ).
   endmethod.
 
 
+  method DEFINE_COMPLEXTYPES.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+ data:
+       lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,             "#EC NEEDED
+       lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,             "#EC NEEDED
+       lo_property       type ref to /iwbep/if_mgw_odata_property.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   COMPLEX TYPE - Image
+***********************************************************************************************************************************
+lo_complex_type = model->create_complex_type( 'Image' ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+lo_property = lo_complex_type->create_property( iv_property_name  = 'Filename' iv_abap_fieldname = 'FILENAME' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '012' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 30 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'Value' iv_abap_fieldname = 'VALUE' ). "#EC NOTEXT
+lo_property->set_type_edm_binary( ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property = lo_complex_type->create_property( iv_property_name  = 'Mimitype' iv_abap_fieldname = 'MIMITYPE' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '013' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 100 ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_complex_type->bind_structure( iv_structure_name   = '/UNIQ/SUPP_GW_S_PRDBILD_COMPLX'
+                                 iv_bind_conversions = 'X' ). "#EC NOTEXT
+  endmethod.
+
+
   method DEFINE_PRODUCT.
 *&---------------------------------------------------------------------*
 *&           Generated code for the MODEL PROVIDER BASE CLASS         &*
@@ -272,6 +341,7 @@ lo_entity_set->set_filter_required( abap_false ).
 ***********************************************************************************************************************************
 
 lo_entity_type = model->create_entity_type( iv_entity_type_name = 'Product' iv_def_entity_set = abap_false ). "#EC NOTEXT
+lo_entity_type->set_is_media( 'X' ).  "#EC NOTEXT
 
 ***********************************************************************************************************************************
 *Properties
@@ -377,6 +447,9 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
       EXPORTING
         iv_key      = 'unicode'
         iv_value    = 'false' ).
+lo_complex_type = lo_entity_type->create_complex_property( iv_property_name = 'Image'
+                                                           iv_complex_type_name = 'Image'
+                                                           iv_abap_fieldname    = 'IMAGE' ). "#EC NOTEXT
 
 lo_entity_type->bind_structure( iv_structure_name   = '/UNIQ/SUPPLIER_GW_S_PRD'
                                 iv_bind_conversions = 'X' ). "#EC NOTEXT
@@ -386,6 +459,118 @@ lo_entity_type->bind_structure( iv_structure_name   = '/UNIQ/SUPPLIER_GW_S_PRD'
 *   ENTITY SETS
 ***********************************************************************************************************************************
 lo_entity_set = lo_entity_type->create_entity_set( 'ProductSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_PRODUCT_IMAGE.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - Product_Image
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'Product_Image' iv_def_entity_set = abap_false ). "#EC NOTEXT
+lo_entity_type->set_is_media( 'X' ).  "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Bilderid' iv_abap_fieldname = 'BILDERID' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 8 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Productid' iv_abap_fieldname = 'PRODUCTID' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 8 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Filename' iv_abap_fieldname = 'FILENAME' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '010' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 30 ). "#EC NOTEXT
+lo_property->set_creatable( abap_true ).
+lo_property->set_updatable( abap_true ).
+lo_property->set_sortable( abap_true ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_true ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Value' iv_abap_fieldname = 'VALUE' ). "#EC NOTEXT
+lo_property->set_type_edm_binary( ).
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Mimitype' iv_abap_fieldname = 'MIMITYPE' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '011' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 30 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name   = '/UNIQ/SUPPLIER_GW_S_PRD_BILD'
+                                iv_bind_conversions = 'X' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'Product_ImageSet' ). "#EC NOTEXT
 
 lo_entity_set->set_creatable( abap_false ).
 lo_entity_set->set_updatable( abap_false ).
@@ -596,7 +781,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20221206075408'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20221221100648'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
@@ -685,6 +870,38 @@ ls_text_element-artifact_type          = 'PROP'.                                
 ls_text_element-parent_artifact_name   = 'Product'.                            "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
 ls_text_element-text_symbol            = '009'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Filename'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'Product_Image'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '010'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Mimitype'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'Product_Image'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '011'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Filename'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                           "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'Image'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'CTYP'.                                           "#EC NOTEXT
+ls_text_element-text_symbol            = '012'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Mimitype'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                           "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'Image'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'CTYP'.                                           "#EC NOTEXT
+ls_text_element-text_symbol            = '013'.              "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
   endmethod.
 ENDCLASS.

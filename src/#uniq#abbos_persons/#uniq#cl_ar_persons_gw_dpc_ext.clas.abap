@@ -29,31 +29,20 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
     DATA : ls_pers_db TYPE /uniq/at_pers.
 
 
-    DATA: BEGIN OF ls_entity,
-            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
-            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
-            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
-            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
-            email       TYPE /uniq/persons_gw_s_pers-email,
-            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
-            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
-            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
-            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
-            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
 
-          END OF ls_entity.
+
+    SELECT MAX( personid ) FROM /uniq/at_pers INTO @DATA(lv_pers_id).
 
     io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
 
 **********************************************************************
 *& gets the last person id from the database
 **********************************************************************
-    SELECT MAX( personid ) FROM /uniq/at_pers INTO @DATA(lv_pers_id).
+*    SELECT MAX( personid ) FROM /uniq/at_pers INTO @DATA(lv_pers_id).
 
-    MOVE-CORRESPONDING er_entity TO ls_entity.
-    ls_entity-personid = lv_pers_id + 1.
-    MOVE-CORRESPONDING er_entity-adresse TO ls_entity.
-    MOVE-CORRESPONDING ls_entity TO ls_pers_db.
+    er_entity-personid = lv_pers_id + 1.
+    MOVE-CORRESPONDING er_entity TO ls_pers_db.
+    MOVE-CORRESPONDING er_entity-adresse TO ls_pers_db.
 
     INSERT /uniq/at_pers FROM ls_pers_db.
 
@@ -70,6 +59,7 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
         EXPORTING
           message_container = mo_context->get_message_container( ).
     ENDIF.
+
   ENDMETHOD.
 
 
@@ -117,21 +107,7 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
 
     DATA: ls_pers    TYPE /uniq/persons_gw_s_pers,
-          ls_adresse TYPE /uniq/persons_gw_s_pers-adresse.
-
-    DATA: BEGIN OF ls_entity,
-            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
-            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
-            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
-            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
-            email       TYPE /uniq/persons_gw_s_pers-email,
-            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
-            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
-            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
-            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
-            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
-
-          END OF ls_entity.
+          ls_entity TYPE /uniq/at_pers.
 
 **********************************************************************
     io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_pers ).
@@ -140,7 +116,7 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
       SELECT SINGLE *
        FROM /uniq/at_pers
-       INTO CORRESPONDING FIELDS OF  @ls_entity
+       INTO CORRESPONDING FIELDS OF @ls_entity
       WHERE personid = @ls_pers-personid.
 
 
@@ -201,27 +177,9 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
 
 
-    DATA: lv_order_by     TYPE string,
-          ls_adresse      TYPE /uniq/persons_gw_s_pers-adresse,
-          ls_entityset_ad LIKE LINE OF et_entityset.
-
-********************************Lokale Struktur**************************************
-    DATA: BEGIN OF ls_entityset,
-            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
-            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
-            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
-            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
-            email       TYPE /uniq/persons_gw_s_pers-email,
-            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
-            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
-            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
-            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
-            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
-
-          END OF ls_entityset.
-
-    DATA lt_entityset LIKE TABLE OF ls_entityset.
-
+    DATA: lv_order_by  TYPE string,
+          ls_entityset LIKE LINE OF et_entityset,
+          lt_entityset TYPE TABLE OF /uniq/at_pers.
 **********************************************************************
     DATA(lv_sql_where) = io_tech_request_context->get_osql_where_clause( ).
     DATA(lv_top) = io_tech_request_context->get_top( ).
@@ -290,12 +248,13 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 **********************************************************************
 
 ****************************Insert Data to et_entityset*******************************************
-    LOOP AT lt_entityset INTO ls_entityset.
 
-      MOVE-CORRESPONDING ls_entityset TO ls_entityset_ad.
-      MOVE-CORRESPONDING ls_entityset TO ls_entityset_ad-adresse.
+    LOOP AT lt_entityset INTO DATA(ls_entityset_db).
 
-      APPEND ls_entityset_ad TO et_entityset.
+      MOVE-CORRESPONDING ls_entityset_db TO ls_entityset.
+      MOVE-CORRESPONDING ls_entityset_db TO ls_entityset-adresse.
+
+      APPEND ls_entityset TO et_entityset.
 *      wait UP TO 1 SECONDS.
     ENDLOOP.
 
@@ -363,19 +322,6 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
     DATA: ls_keys   LIKE er_entity,
           ls_pers_db TYPE /uniq/at_pers.
 
-    DATA: BEGIN OF ls_entity,
-            personid    TYPE /uniq/persons_gw_s_pers-personid,               "/uniq/at_pers-personid,
-            firstname   TYPE /uniq/persons_gw_s_pers-firstname,
-            lastname    TYPE /uniq/persons_gw_s_pers-lastname,
-            dateofbirth TYPE /uniq/persons_gw_s_pers-dateofbirth,
-            email       TYPE /uniq/persons_gw_s_pers-email,
-            street      TYPE /uniq/persons_gw_s_pers-adresse-street,
-            postcode    TYPE /uniq/persons_gw_s_pers-adresse-postcode,
-            country     TYPE /uniq/persons_gw_s_pers-adresse-country,
-            homenumber  TYPE /uniq/persons_gw_s_pers-adresse-homenumber,
-            city        TYPE /uniq/persons_gw_s_pers-adresse-city,
-
-          END OF ls_entity.
 
     io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
 
@@ -397,9 +343,9 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
     IF  lv_pers_exists = abap_true.
 
-      MOVE-CORRESPONDING er_entity TO ls_entity.
-      MOVE-CORRESPONDING er_entity-adresse TO ls_entity.
-      MOVE-CORRESPONDING ls_entity TO ls_pers_db.
+      MOVE-CORRESPONDING er_entity TO ls_pers_db.
+      MOVE-CORRESPONDING er_entity-adresse TO ls_pers_db.
+
 
       UPDATE /uniq/at_pers FROM ls_pers_db.
 

@@ -110,7 +110,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 
   METHOD calculate_poduct_totalamount.
 
-    WAIT UP TO 1 SECONDS.
+*    WAIT UP TO 1 SECONDS.
 
     rv_total_amount = iv_price * iv_quantity.
 
