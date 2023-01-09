@@ -2,7 +2,7 @@
 <abapGit version="v1.0.0" serializer="LCL_OBJECT_FUGR" serializer_version="v1.0.0">
  <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
   <asx:values>
-   <AREAT>FunkGruppe für Tabelle PRD</AREAT>
+   <AREAT>erweiterte Tabellenpflege (generiert)</AREAT>
    <INCLUDES>
     <SOBJ_NAME>/UNIQ/LAT_PRDF00</SOBJ_NAME>
     <SOBJ_NAME>/UNIQ/LAT_PRDI00</SOBJ_NAME>
@@ -443,16 +443,14 @@
        <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
        <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
        <TYPE>TEXT</TYPE>
-       <NAME>*/UNIQ/AT_PRD-QUANTITY</NAME>
-       <TEXT>Quan____________________________________</TEXT>
+       <NAME>*/UNIQ/AT_PRD-FILENAME</NAME>
+       <TEXT>+_______________________________________</TEXT>
        <LINE>001</LINE>
        <COLUMN>005</COLUMN>
        <LENGTH>040</LENGTH>
-       <VISLENGTH>004</VISLENGTH>
+       <VISLENGTH>030</VISLENGTH>
        <HEIGHT>001</HEIGHT>
        <FORMAT>CHAR</FORMAT>
-       <FROM_DICT>X</FROM_DICT>
-       <MODIFIC>1</MODIFIC>
        <REQU_ENTRY>N</REQU_ENTRY>
        <TC_HEADING>X</TC_HEADING>
       </RPY_DYFATC>
@@ -460,33 +458,14 @@
        <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
        <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
        <TYPE>TEXT</TYPE>
-       <NAME>*/UNIQ/AT_PRD-PRICE</NAME>
-       <TEXT>Price___________________________________</TEXT>
+       <NAME>*/UNIQ/AT_PRD-MIMITYPE</NAME>
+       <TEXT>+_______________________________________</TEXT>
        <LINE>001</LINE>
        <COLUMN>006</COLUMN>
        <LENGTH>040</LENGTH>
-       <VISLENGTH>010</VISLENGTH>
+       <VISLENGTH>100</VISLENGTH>
        <HEIGHT>001</HEIGHT>
        <FORMAT>CHAR</FORMAT>
-       <FROM_DICT>X</FROM_DICT>
-       <MODIFIC>V</MODIFIC>
-       <REQU_ENTRY>N</REQU_ENTRY>
-       <TC_HEADING>X</TC_HEADING>
-      </RPY_DYFATC>
-      <RPY_DYFATC>
-       <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
-       <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
-       <TYPE>TEXT</TYPE>
-       <NAME>*/UNIQ/AT_PRD-CURRENCY</NAME>
-       <TEXT>Währung_________________________________</TEXT>
-       <LINE>001</LINE>
-       <COLUMN>007</COLUMN>
-       <LENGTH>040</LENGTH>
-       <VISLENGTH>010</VISLENGTH>
-       <HEIGHT>001</HEIGHT>
-       <FORMAT>CHAR</FORMAT>
-       <FROM_DICT>X</FROM_DICT>
-       <MODIFIC>1</MODIFIC>
        <REQU_ENTRY>N</REQU_ENTRY>
        <TC_HEADING>X</TC_HEADING>
       </RPY_DYFATC>
@@ -579,14 +558,14 @@
        <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
        <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
        <TYPE>TEMPLATE</TYPE>
-       <NAME>/UNIQ/AT_PRD-QUANTITY</NAME>
-       <TEXT>___</TEXT>
+       <NAME>/UNIQ/AT_PRD-FILENAME</NAME>
+       <TEXT>______________________________</TEXT>
        <LINE>001</LINE>
        <COLUMN>005</COLUMN>
-       <LENGTH>003</LENGTH>
-       <VISLENGTH>004</VISLENGTH>
+       <LENGTH>030</LENGTH>
+       <VISLENGTH>030</VISLENGTH>
        <HEIGHT>001</HEIGHT>
-       <FORMAT>INT1</FORMAT>
+       <FORMAT>CHAR</FORMAT>
        <FROM_DICT>X</FROM_DICT>
        <MODIFIC>X</MODIFIC>
        <INPUT_FLD>X</INPUT_FLD>
@@ -596,32 +575,14 @@
        <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
        <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
        <TYPE>TEMPLATE</TYPE>
-       <NAME>/UNIQ/AT_PRD-PRICE</NAME>
-       <TEXT>__________</TEXT>
+       <NAME>/UNIQ/AT_PRD-MIMITYPE</NAME>
+       <TEXT>____________________________________________________________________________________________________</TEXT>
        <LINE>001</LINE>
        <COLUMN>006</COLUMN>
-       <LENGTH>010</LENGTH>
-       <VISLENGTH>010</VISLENGTH>
+       <LENGTH>100</LENGTH>
+       <VISLENGTH>100</VISLENGTH>
        <HEIGHT>001</HEIGHT>
-       <FORMAT>CURR</FORMAT>
-       <FROM_DICT>X</FROM_DICT>
-       <MODIFIC>X</MODIFIC>
-       <INPUT_FLD>X</INPUT_FLD>
-       <OUTPUT_FLD>X</OUTPUT_FLD>
-       <REF_FIELD>/UNIQ/AT_PRD-CURRENCY</REF_FIELD>
-      </RPY_DYFATC>
-      <RPY_DYFATC>
-       <CONT_TYPE>TABLE_CTRL</CONT_TYPE>
-       <CONT_NAME>TCTRL_/UNIQ/AT_PRD</CONT_NAME>
-       <TYPE>TEMPLATE</TYPE>
-       <NAME>/UNIQ/AT_PRD-CURRENCY</NAME>
-       <TEXT>_____</TEXT>
-       <LINE>001</LINE>
-       <COLUMN>007</COLUMN>
-       <LENGTH>005</LENGTH>
-       <VISLENGTH>010</VISLENGTH>
-       <HEIGHT>001</HEIGHT>
-       <FORMAT>CUKY</FORMAT>
+       <FORMAT>CHAR</FORMAT>
        <FROM_DICT>X</FROM_DICT>
        <MODIFIC>X</MODIFIC>
        <INPUT_FLD>X</INPUT_FLD>
@@ -681,13 +642,10 @@
        <LINE>    FIELD /UNIQ/AT_PRD-CATEGORYID .</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>    FIELD /UNIQ/AT_PRD-QUANTITY .</LINE>
+       <LINE>    FIELD /UNIQ/AT_PRD-FILENAME .</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
-       <LINE>    FIELD /UNIQ/AT_PRD-PRICE .</LINE>
-      </RPY_DYFLOW>
-      <RPY_DYFLOW>
-       <LINE>    FIELD /UNIQ/AT_PRD-CURRENCY .</LINE>
+       <LINE>    FIELD /UNIQ/AT_PRD-MIMITYPE .</LINE>
       </RPY_DYFLOW>
       <RPY_DYFLOW>
        <LINE>    MODULE SET_UPDATE_FLAG ON CHAIN-REQUEST.</LINE>

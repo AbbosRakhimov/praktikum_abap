@@ -248,7 +248,6 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 **********************************************************************
 
 ****************************Insert Data to et_entityset*******************************************
-
     LOOP AT lt_entityset INTO DATA(ls_entityset_db).
 
       MOVE-CORRESPONDING ls_entityset_db TO ls_entityset.

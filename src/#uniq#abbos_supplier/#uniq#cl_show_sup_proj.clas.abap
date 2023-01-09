@@ -153,7 +153,8 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 
   METHOD get_all_categories.
 
-    DATA : lv_order_by TYPE string.
+    DATA : lv_order_by  TYPE string,
+           lt_cat_check LIKE et_category.
 
     DATA(lv_maxrows) = 0.
 
@@ -184,7 +185,21 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
     IF NOT iv_skip IS INITIAL.
       DELETE et_category TO iv_skip.
     ENDIF.
+************************* AUTHORITY CHECK*********************************************
+    IF sy-uname = 'ABBO_TEST'.
+      LOOP AT et_category INTO DATA(ls_category).
 
+        AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+                 ID 'ACTVT' FIELD '03'
+                 ID 'CATEGORYID' FIELD ls_category-categoryid.
+        IF sy-subrc = 0.
+          APPEND ls_category TO lt_cat_check.
+        ENDIF.
+
+      ENDLOOP.
+      CLEAR et_category.
+      MOVE-CORRESPONDING lt_cat_check TO et_category.
+    ENDIF.
 ********************************Inlinecount**************************************
     IF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
       SELECT COUNT( * ) FROM /uniq/at_cat INTO @DATA(lv_count).
@@ -214,6 +229,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 *
     DATA : lv_order_by   TYPE string,
            lt_prd        LIKE et_product,
+           lt_prd_check  LIKE et_product,
            index         TYPE i VALUE 0,
            lv_totalmount TYPE boolean VALUE abap_false.
 
@@ -317,6 +333,21 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
         <fs_product>-totalamount = calculate_poduct_totalamount( iv_price = <fs_product>-price iv_quantity = <fs_product>-quantity ).
       ENDLOOP.
 
+************************* AUTHORITY CHECK*********************************************
+      IF sy-uname = 'ABBO_TEST'.
+        LOOP AT et_product INTO DATA(ls_product).
+
+          AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+                   ID 'ACTVT' FIELD '03'
+                   ID 'CATEGORYID' FIELD ls_product-categoryid.
+          IF sy-subrc = 0.
+            APPEND ls_product TO lt_prd_check.
+          ENDIF.
+
+        ENDLOOP.
+        CLEAR et_product.
+        MOVE-CORRESPONDING lt_prd_check TO et_product.
+      ENDIF.
 ********************************Inlinecount**************************************
       IF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
         SELECT COUNT( * )
@@ -335,7 +366,6 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
       ENDIF.
 
     ENDIF.
-
   ENDMETHOD.
 
 

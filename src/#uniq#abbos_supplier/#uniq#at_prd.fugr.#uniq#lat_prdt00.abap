@@ -1,6 +1,6 @@
 *---------------------------------------------------------------------*
 *    view related data declarations
-*   generation date: 23.11.2022 at 10:51:25
+*   generation date: 22.12.2022 at 12:11:43
 *   view maintenance generator version: #001407#
 *---------------------------------------------------------------------*
 *...processing: /UNIQ/AT_PRD....................................*

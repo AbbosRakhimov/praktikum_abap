@@ -66,6 +66,30 @@
      <ENTRY>A record exists in the products table for the category ID to be deleted. Please delete the record in the product table first.</ENTRY>
      <LENGTH>132</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>010</KEY>
+     <ENTRY>There are no Image with info you provided</ENTRY>
+     <LENGTH>82</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>011</KEY>
+     <ENTRY>A post cannot be run on the product entity. To do this, use the update</ENTRY>
+     <LENGTH>132</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>012</KEY>
+     <ENTRY>they are not authenticated</ENTRY>
+     <LENGTH>52</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>013</KEY>
+     <ENTRY>product does not exist</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
    </TPOOL>
   </asx:values>
  </asx:abap>

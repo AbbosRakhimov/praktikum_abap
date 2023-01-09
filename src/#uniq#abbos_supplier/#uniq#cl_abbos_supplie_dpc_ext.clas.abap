@@ -5,9 +5,13 @@ class /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT definition
 
 public section.
 
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM
+    redefinition .
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~DELETE_STREAM
+    redefinition .
   methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~GET_STREAM
     redefinition .
-  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~CREATE_STREAM
+  methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~UPDATE_STREAM
     redefinition .
 protected section.
 
@@ -41,6 +45,8 @@ protected section.
     redefinition .
   methods SUPPLIERSET_UPDATE_ENTITY
     redefinition .
+  methods PRODUCT_IMAGESET_GET_ENTITYSET
+    redefinition .
 private section.
 ENDCLASS.
 
@@ -51,33 +57,328 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
 
   METHOD /iwbep/if_mgw_appl_srv_runtime~create_stream.
 
-    DATA(ls_media) = is_media_resource.
-    DATA(ls_image) = VALUE /uniq/at_prd( filename = iv_slug
-                                      mimitype = is_media_resource-mime_type
-                                      value    = is_media_resource-value ).
+    DATA: ls_prd_bild TYPE /uniq/prd_bilder,
+          ls_media    TYPE ty_s_media_resource,
+          ls_prd      TYPE /uniq/at_prd.
+    DATA(lt_request_details) = mr_request_details->t_uri_query_parameter.
 
-*  MODIFY zjp_image FROM @ls_image.
 
-*  copy_data_to_ref( EXPORTING is_data = ls_image
-*                    CHANGING  cr_data = er_entity ).
+    CASE iv_entity_name.
+**********************************************************************
+*& Wenn Request vom Entity Product kommt, wird Create auf Product vehindert
+**********************************************************************
+      WHEN'Product'.
 
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid           = /iwbep/cx_mgw_busi_exception=>business_error
+            http_status_code = '404'
+            message          = TEXT-011.
+
+      WHEN'Product_Image'.
+
+        READ TABLE lt_request_details WITH KEY name = 'Productid' INTO DATA(ls_key).
+**********************************************************************
+*& Wenn lt_request_details kein Product id enthählt, wird exception geworfen
+**********************************************************************
+        IF sy-subrc <> 0.
+
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-007.
+        ELSE.
+*************************Bilder Id wird automatisch erstellt*********************************************
+          SELECT MAX( bilderid ) FROM /uniq/prd_bilder INTO @DATA(lv_bilderid).
+
+****Hier wird productname aus Tabelle Product gehohlt, um in Tabelle Bilder filename mit productname gespiechert zu werden*************************************************
+          SELECT SINGLE productname
+             FROM /uniq/at_prd
+             WHERE productid = @ls_key-value
+            INTO ( @DATA(lv_productname) ).
+
+          ls_prd_bild-bilderid = lv_bilderid + 1.
+          ls_prd_bild-productid = ls_key-value.
+          ls_prd_bild-mimitype = is_media_resource-mime_type.
+          ls_prd_bild-value = is_media_resource-value.
+          ls_prd_bild-filename = |{ lv_productname }.{ substring_after( val = is_media_resource-mime_type sub = '/' ) }|.
+
+**********************Leerzeichen wird entfert************************************************
+          CONDENSE ls_prd_bild-bilderid.
+
+**********************Bilder in Datenbank eingefügt************************************************
+          INSERT /uniq/prd_bilder FROM ls_prd_bild.
+
+          IF  sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-002
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+
+********************Eingefügte Bilder Daten wird zurückgegeben**************************************************
+          copy_data_to_ref(
+               EXPORTING
+                 is_data = ls_prd_bild
+               CHANGING
+                 cr_data = er_entity
+             ).
+        ENDIF.
+    ENDCASE.
+
+
+
+  ENDMETHOD.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~delete_stream.
+
+    DATA lt_prd TYPE TABLE OF /uniq/at_prd.
+    DATA(lt_keys) = io_tech_request_context->get_keys( ).
+
+    CASE iv_entity_name.
+
+      WHEN'Product'.
+
+        DATA(lv_prd_id) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_prd_id IS NOT INITIAL.
+
+          SELECT SINGLE *
+              FROM /uniq/at_prd
+             WHERE productid = @lv_prd_id
+            INTO @DATA(ls_prd).
+
+          CLEAR: ls_prd-filename, ls_prd-mimitype, ls_prd-value.
+
+          UPDATE /uniq/at_prd FROM ls_prd.
+
+          IF  sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+
+      WHEN'Product_Image'.
+
+        DATA(lv_prd_bild_id) = lt_keys[ name = 'BILDERID' ]-value.
+        DATA(lv_prod_id) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_prd_bild_id IS NOT INITIAL AND lv_prod_id IS NOT INITIAL.
+
+*          SELECT SINGLE * FROM /uniq/prd_bilder INTO @DATA(ls_prd_bild) WHERE bilderid = @lv_prd_bild_id AND productid = @lv_prod_id.
+          DELETE FROM /uniq/prd_bilder WHERE bilderid = lv_prd_bild_id AND productid = lv_prod_id.
+
+          IF  sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+*
+*        copy_data_to_ref(
+*          EXPORTING
+*            is_data = ls_prd_bild
+*         CHANGING
+*           cr_data = /IWBEP/IF_MGW_APPL_SRV_RUNTIME~DELETE_STREAM ).
+    ENDCASE.
   ENDMETHOD.
 
 
   METHOD /iwbep/if_mgw_appl_srv_runtime~get_stream.
 
-    DATA : ls_media TYPE ty_s_media_resource.
-    ls_media-value = '552D4E4951'. " cl_abap_codepage=>convert_to( source = 'U-NIQ' ).
-    ls_media-mime_type = 'text/plain'.
-*    DATA(lt_keys) = io_tech_request_context->get_keys( ).
-*    DATA(lv_productid) = VALUE #( lt_keys[ name = 'PRODUCTID' ]-value OPTIONAL ).
 
-   copy_data_to_ref(
-     exporting
-       is_data = ls_media
-     changing
-       cr_data = er_stream
-   ).
+    DATA : ls_media  TYPE ty_s_media_resource,
+           ls_header TYPE ihttpnvp.
+    DATA(lt_keys) = io_tech_request_context->get_keys( ).
+
+    CASE iv_entity_name.
+
+      WHEN'Product'.
+
+        DATA(lv_productid) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_productid IS NOT INITIAL.
+
+          SELECT SINGLE
+               FROM /uniq/at_prd
+                 FIELDS value, mimitype, filename
+               WHERE productid = @lv_productid
+              INTO ( @ls_media-value, @ls_media-mime_type, @DATA(lv_filename) ).
+
+          ls_header = VALUE ihttpnvp( name  = 'Content-Disposition'
+                                                   value = |inline; filename="{ escape( val = lv_filename format = cl_abap_format=>e_url ) }";| ).
+          set_header( is_header = ls_header ).
+
+          copy_data_to_ref(
+            EXPORTING
+              is_data = ls_media
+            CHANGING
+              cr_data = er_stream
+          ).
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+
+      WHEN'Product_Image'.
+
+        DATA(lv_bilderid) = lt_keys[ name = 'BILDERID' ]-value.
+        DATA(lv_prod_id) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_bilderid IS NOT INITIAL AND lv_prod_id IS NOT INITIAL.
+
+          SELECT SINGLE
+               FROM /uniq/prd_bilder
+                 FIELDS value, mimitype, filename
+               WHERE bilderid = @lv_bilderid AND productid = @lv_prod_id
+              INTO ( @ls_media-value, @ls_media-mime_type, @DATA(lv_filename_bild) ).
+
+          ls_header = VALUE ihttpnvp( name  = 'Content-Disposition'
+                                                   value = |inline; filename="{ escape( val = lv_filename_bild format = cl_abap_format=>e_url ) }";| ).
+          set_header( is_header = ls_header ).
+
+          copy_data_to_ref(
+            EXPORTING
+              is_data = ls_media
+            CHANGING
+              cr_data = er_stream
+          ).
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+    ENDCASE.
+
+  ENDMETHOD.
+
+
+  METHOD /iwbep/if_mgw_appl_srv_runtime~update_stream.
+
+    DATA(lt_keys) = io_tech_request_context->get_keys( ).
+
+    CASE iv_entity_name.
+
+      WHEN'Product'.
+        DATA(lv_prd_id) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_prd_id IS NOT INITIAL.
+
+          SELECT SINGLE *
+              FROM /uniq/at_prd
+             WHERE productid = @lv_prd_id
+            INTO @DATA(ls_prd).
+
+          ls_prd-mimitype = is_media_resource-mime_type.
+          ls_prd-value = is_media_resource-value.
+          ls_prd-filename = |{ ls_prd-productname }.{ substring_after( val = is_media_resource-mime_type sub = '/' ) }|.
+
+          UPDATE /uniq/at_prd FROM ls_prd.
+
+          IF  sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+
+      WHEN'Product_Image'.
+
+        DATA(lv_prd_bild_id) = lt_keys[ name = 'BILDERID' ]-value.
+        DATA(lv_prod_id) = lt_keys[ name = 'PRODUCTID' ]-value.
+
+        IF lv_prd_bild_id IS NOT INITIAL AND lv_prod_id IS NOT INITIAL.
+
+          SELECT SINGLE *
+             FROM /uniq/prd_bilder
+             WHERE bilderid = @lv_prd_bild_id AND productid = @lv_prod_id
+            INTO @DATA(ls_prd_bild).
+
+****Hier wird productname aus Tabelle Product geholt, um in Tabelle Bilder filename mit productname gespiechert zu werden*************************************************
+          SELECT SINGLE productname
+            FROM /uniq/at_prd
+            WHERE productid = @lv_prod_id
+           INTO @DATA(lv_productname).
+
+          ls_prd_bild-mimitype = is_media_resource-mime_type.
+          ls_prd_bild-value = is_media_resource-value.
+          ls_prd_bild-filename = |{ lv_productname }.{ substring_after( val = is_media_resource-mime_type sub = '/' ) }|.
+
+          UPDATE /uniq/prd_bilder FROM ls_prd_bild.
+
+          IF  sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-010.
+        ENDIF.
+    ENDCASE.
 
   ENDMETHOD.
 
@@ -85,26 +386,60 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
 METHOD categoryset_create_entity.
 
   DATA : ls_cat_db TYPE /uniq/at_cat.
-         "ls_cat    LIKE er_entity.
+  "ls_cat    LIKE er_entity.
 
   io_data_provider->read_entry_data( IMPORTING es_data = er_entity ).
 
-  MOVE-CORRESPONDING er_entity TO ls_cat_db.
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+  AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+           ID 'ACTVT' FIELD '03'
+           ID 'CATEGORYID' FIELD er_entity-categoryid.
 
-  INSERT /uniq/at_cat FROM ls_cat_db.
+  IF sy-subrc = 0.
+**********************************************************************
+*& IF yes Check if the user has delete permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+         ID 'ACTVT' FIELD '01'
+         ID 'CATEGORYID' FIELD er_entity-categoryid.
 
-  IF sy-subrc <> 0.
+    IF sy-subrc <> 0.
 
-    mo_context->get_message_container( )->add_message_text_only(
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '401'
+          message          = TEXT-012.
+    ELSE.
+
+      MOVE-CORRESPONDING er_entity TO ls_cat_db.
+
+      INSERT /uniq/at_cat FROM ls_cat_db.
+
+      IF sy-subrc <> 0.
+
+        mo_context->get_message_container( )->add_message_text_only(
+          EXPORTING
+            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+            iv_msg_text               = TEXT-002
+            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+            iv_entity_type            = iv_entity_name ).
+
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+          EXPORTING
+            message_container = mo_context->get_message_container( ).
+      ENDIF.
+    ENDIF.
+
+  ELSE.
+
+    RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
       EXPORTING
-        iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-        iv_msg_text               = TEXT-002
-        iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-        iv_entity_type            = iv_entity_name ).
-
-    RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-      EXPORTING
-        message_container = mo_context->get_message_container( ).
+        textid           = /iwbep/cx_mgw_busi_exception=>business_error
+        http_status_code = '404'
+        message          = TEXT-013.
   ENDIF.
 
 ENDMETHOD.
@@ -117,57 +452,91 @@ ENDMETHOD.
 
 
     io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_keys ).
-*    DATA(lv_entity_type_name) = io_tech_request_context->get_entity_type_name( ).    " /IWBEP/MGW_TECH_NAME
+
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+             ID 'ACTVT' FIELD '03'
+             ID 'CATEGORYID' FIELD ls_keys-categoryid.
+
+    IF sy-subrc = 0.
+**********************************************************************
+*& IF yes Check if the user has delete permission
+**********************************************************************
+      AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+            ID 'ACTVT' FIELD '06'
+            ID 'CATEGORYID' FIELD ls_keys-categoryid.
+
+      IF sy-subrc <> 0.
+
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid           = /iwbep/cx_mgw_busi_exception=>business_error
+            http_status_code = '403'
+            message          = TEXT-012.
+
+      ELSE.
 
 **********************************************************************
 *& Check if there is a reference to the category id from the products table
 **********************************************************************
-    SELECT SINGLE @abap_true
-      FROM /uniq/at_prd
-      INTO @DATA(lv_prd_exists)
-     WHERE categoryid = @ls_keys-categoryid.
+        SELECT SINGLE @abap_true
+          FROM /uniq/at_prd
+          INTO @DATA(lv_prd_exists)
+         WHERE categoryid = @ls_keys-categoryid.
 
 **********************************************************************
 *& if there is a reference to the category id from the products table, than throw business execption
 **********************************************************************
-    IF lv_prd_exists = abap_true.
+        IF lv_prd_exists = abap_true.
 
-      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
-        EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = TEXT-009.
-    ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid  = /iwbep/cx_mgw_busi_exception=>business_error
+              message = TEXT-009.
+        ELSE.
 
 **********************************************************************
 *& Check if there is a record exist to the category id in the category table
 **********************************************************************
-      SELECT SINGLE @abap_true
-        FROM /uniq/at_cat
-        INTO @DATA(lv_cat_exists)
-       WHERE categoryid = @ls_keys-categoryid.
+          SELECT SINGLE @abap_true
+            FROM /uniq/at_cat
+            INTO @DATA(lv_cat_exists)
+           WHERE categoryid = @ls_keys-categoryid.
 
-      IF lv_cat_exists = abap_true.
+          IF lv_cat_exists = abap_true.
 
-        DELETE FROM /uniq/at_cat WHERE categoryid = ls_keys-categoryid.
+            DELETE FROM /uniq/at_cat WHERE categoryid = ls_keys-categoryid.
 
-        IF  sy-subrc <> 0.
-          mo_context->get_message_container( )->add_message_text_only(
-            EXPORTING
-              iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-              iv_msg_text               = TEXT-001
-              iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-              iv_entity_type            = iv_entity_name ).
+            IF  sy-subrc <> 0.
+              mo_context->get_message_container( )->add_message_text_only(
+                EXPORTING
+                  iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                  iv_msg_text               = TEXT-001
+                  iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                  iv_entity_type            = iv_entity_name ).
 
-          RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-            EXPORTING
-              message_container = mo_context->get_message_container( ).
+              RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+                EXPORTING
+                  message_container = mo_context->get_message_container( ).
+            ENDIF.
+          ELSE.
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+              EXPORTING
+                textid  = /iwbep/cx_mgw_busi_exception=>business_error
+                message = TEXT-006.
+          ENDIF.
         ENDIF.
-      ELSE.
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
-          EXPORTING
-            textid  = /iwbep/cx_mgw_busi_exception=>business_error
-            message = TEXT-006.
       ENDIF.
+
+    ELSE.
+
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-013.
     ENDIF.
 
   ENDMETHOD.
@@ -215,6 +584,22 @@ ENDMETHOD.
                 IMPORTING
                   er_entity      =  er_entity ).
     ENDIF.
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+             ID 'ACTVT' FIELD '03'
+             ID 'CATEGORYID' FIELD er_entity-categoryid.
+
+    IF sy-subrc <> 0.
+
+      CLEAR er_entity.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-013.
+    ENDIF.
 
 
   ENDMETHOD.
@@ -253,41 +638,73 @@ ENDMETHOD.
 *& categoryid is primary key and may NOT be changed, so we overwrite by key from URL Segment
 **********************************************************************
     er_entity-categoryid = ls_keys-categoryid.
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+             ID 'ACTVT' FIELD '03'
+             ID 'CATEGORYID' FIELD ls_keys-categoryid.
+
+    IF sy-subrc = 0.
+**********************************************************************
+*& IF yes Check if the user has update permission
+**********************************************************************
+      AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+               ID 'ACTVT' FIELD '02'
+               ID 'CATEGORYID' FIELD ls_keys-categoryid.
+
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid           = /iwbep/cx_mgw_busi_exception=>business_error
+            http_status_code = '403'
+            message          = TEXT-012.
+      ELSE.
 
 **********************************************************************
 *& Check if there is a record exist to the category id in the category table
 **********************************************************************
 
-    SELECT SINGLE @abap_true
-      FROM /uniq/at_cat
-      INTO @DATA(lv_cat_exists)
-     WHERE categoryid = @ls_keys-categoryid.
+        SELECT SINGLE @abap_true
+          FROM /uniq/at_cat
+          INTO @DATA(lv_cat_exists)
+         WHERE categoryid = @ls_keys-categoryid.
 
-    IF  lv_cat_exists = abap_true.
+        IF  lv_cat_exists = abap_true.
 
-      MOVE-CORRESPONDING er_entity TO ls_cat_db.
+          MOVE-CORRESPONDING er_entity TO ls_cat_db.
 
-      UPDATE /uniq/at_cat FROM ls_cat_db.
+          UPDATE /uniq/at_cat FROM ls_cat_db.
 
-      IF sy-subrc <> 0.
-        mo_context->get_message_container( )->add_message_text_only(
-          EXPORTING
-            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-            iv_msg_text               = TEXT-004
-            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-            iv_entity_type            = iv_entity_name ).
+          IF sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
 
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-          EXPORTING
-            message_container = mo_context->get_message_container( ).
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-006.
+        ENDIF.
       ENDIF.
 
     ELSE.
+
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
           http_status_code = '404'
-          message = TEXT-006.
+          message          = TEXT-013.
     ENDIF.
 
   ENDMETHOD.
@@ -305,6 +722,17 @@ ENDMETHOD.
 **********************************************************************
 *& Verify that the correct Supplier ID and Category ID are provided
 **********************************************************************
+
+*    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+*             ID 'ACTVT' FIELD '01'
+*             ID 'CATEGORYID' FIELD er_entity-categoryid.
+*    IF sy-subrc <> 0.
+** Implement a suitable exception handling here
+*    ENDIF.
+*
+*    DATA(o_auth) = cl_auth_objects_to_sql=>create_for_open_sql( ).
+*    DATA(lv_where_cond) = o_auth->get_sql_condition( ).
+
     IF /uniq/cl_show_sup_proj=>check_validity_product(
         EXPORTING
           is_entity      = er_entity
@@ -346,39 +774,81 @@ ENDMETHOD.
 
     io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_keys ).
 
+
+**********************************************************************
+*& retrieves the category ID from the products table
+**********************************************************************
+    SELECT SINGLE *
+      FROM  /uniq/at_prd
+      INTO @DATA(ls_prod)
+     WHERE productid = @ls_keys-productid.
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+             ID 'ACTVT' FIELD '03'
+             ID 'CATEGORYID' FIELD ls_prod-categoryid.
+
+    IF sy-subrc = 0.
+**********************************************************************
+*& IF yes Check if the user has delete permission
+**********************************************************************
+      AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+         ID 'ACTVT' FIELD '06'
+         ID 'CATEGORYID' FIELD ls_prod-categoryid.
+
+      IF sy-subrc <> 0.
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid           = /iwbep/cx_mgw_busi_exception=>business_error
+            http_status_code = '403'
+            message          = TEXT-012.
+      ELSE.
 **********************************************************************
 *& Check if there is a record exist to the product id in the product table
 **********************************************************************
-**********************************************************************
-**********************************************************************
-    SELECT SINGLE @abap_true
-      FROM /uniq/at_prd
-      INTO @DATA(lv_prd_exists)
-     WHERE productid = @ls_keys-productid.
 
-    IF lv_prd_exists = abap_true.
+        SELECT SINGLE @abap_true
+          FROM /uniq/at_prd
+          INTO @DATA(lv_prd_exists)
+         WHERE productid = @ls_keys-productid.
 
-      DELETE FROM /uniq/at_prd WHERE productid = ls_keys-productid.
+        IF lv_prd_exists = abap_true.
 
-      IF sy-subrc <> 0.
+          DELETE FROM /uniq/at_prd WHERE productid = ls_keys-productid.
 
-        mo_context->get_message_container( )->add_message_text_only(
-          EXPORTING
-            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-            iv_msg_text               = TEXT-001
-            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-            iv_entity_type            = iv_entity_name ).
+          IF sy-subrc <> 0.
 
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-          EXPORTING
-            message_container = mo_context->get_message_container( ).
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-001
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
+
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-007.
+        ENDIF.
       ENDIF.
+
     ELSE.
+
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = TEXT-007.
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-013.
     ENDIF.
+
+
 
   ENDMETHOD.
 
@@ -399,21 +869,20 @@ ENDMETHOD.
 *    hat aktueller Benutzer
 *     - LESE Berechtigung auf die
 *     - Categorie des angeforderten Produktes
-
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
     AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
          ID 'ACTVT'      FIELD '03' " LESEN
          ID 'CATEGORYID' FIELD er_entity-categoryid.
 
-    IF sy-subrc = 0.
-      " aktueller benutzer DARF dieses Produkt        sehen
-    ELSE.
-      " aktueller benutzer DARF dieses Produkt NICHHT sehen
-
-
+    IF sy-subrc <> 0.
       CLEAR er_entity.
-      RETURN.
-
-
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-013.
     ENDIF.
 
 
@@ -515,55 +984,117 @@ ENDMETHOD.
 *& categoryid is primary key and may NOT be changed, so we overwrite by key from URL Segment
 **********************************************************************
     er_entity-productid = ls_keys-productid.
+**********************************************************************
+*& Check if the user has read permission
+**********************************************************************
+    AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+             ID 'ACTVT' FIELD '03'
+             ID 'CATEGORYID' FIELD er_entity-categoryid.
 
+    IF sy-subrc = 0.
+**********************************************************************
+*& IF yes Check if the user has update permission
+**********************************************************************
+      AUTHORITY-CHECK OBJECT '/UNIQ/ABSC'
+               ID 'ACTVT' FIELD '02'
+               ID 'CATEGORYID' FIELD er_entity-categoryid.
+
+      IF sy-subrc <> 0.
+
+        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+          EXPORTING
+            textid           = /iwbep/cx_mgw_busi_exception=>business_error
+            http_status_code = '403'
+            message          = TEXT-012.
+      ELSE.
 **********************************************************************
 *& Verify that the correct Supplier ID and Category ID are provided
 **********************************************************************
-    IF /uniq/cl_show_sup_proj=>check_validity_product(
-       EXPORTING
-         is_entity      = er_entity
-       IMPORTING
-         ev_err_message = lv_err_message ) EQ abap_false.
+        IF /uniq/cl_show_sup_proj=>check_validity_product(
+           EXPORTING
+             is_entity      = er_entity
+           IMPORTING
+             ev_err_message = lv_err_message ) EQ abap_false.
 
-      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
-        EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = lv_err_message.
-    ENDIF.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid  = /iwbep/cx_mgw_busi_exception=>business_error
+              message = lv_err_message.
+        ENDIF.
 
 **********************************************************************
 *& Check if there is a record exist to the supplier id in the product table
 **********************************************************************
-    SELECT SINGLE @abap_true
-     FROM /uniq/at_prd
-     INTO @DATA(lv_prd_exists)
-    WHERE productid = @ls_keys-productid.
+        SELECT SINGLE @abap_true
+         FROM /uniq/at_prd
+         INTO @DATA(lv_prd_exists)
+        WHERE productid = @ls_keys-productid.
 
-    IF lv_prd_exists = abap_true.
+        IF lv_prd_exists = abap_true.
 
-      MOVE-CORRESPONDING er_entity TO ls_prd_db.
+          MOVE-CORRESPONDING er_entity TO ls_prd_db.
 
-      UPDATE /uniq/at_prd FROM ls_prd_db.
+          UPDATE /uniq/at_prd FROM ls_prd_db.
 
-      IF sy-subrc <> 0.
-        mo_context->get_message_container( )->add_message_text_only(
-          EXPORTING
-            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-            iv_msg_text               = TEXT-004
-            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-            iv_entity_type            = iv_entity_name ).
+          IF sy-subrc <> 0.
+            mo_context->get_message_container( )->add_message_text_only(
+              EXPORTING
+                iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+                iv_msg_text               = TEXT-004
+                iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+                iv_entity_type            = iv_entity_name ).
 
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-          EXPORTING
-            message_container = mo_context->get_message_container( ).
+            RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+              EXPORTING
+                message_container = mo_context->get_message_container( ).
+          ENDIF.
+        ELSE.
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-007.
+        ENDIF.
       ENDIF.
+
     ELSE.
+
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
           textid           = /iwbep/cx_mgw_busi_exception=>business_error
           http_status_code = '404'
-          message          = TEXT-007.
+          message          = TEXT-013.
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD product_imageset_get_entityset.
+
+    DATA: lv_where     TYPE string,
+          ls_prod_bild TYPE /uniq/supplier_gw_s_prd_bild.
+*          ls_media     TYPE ty_s_media_resource,
+*          ls_header    TYPE ihttpnvp.
+
+    DATA(lt_nav_path) = io_tech_request_context->get_navigation_path( ).
+
+    io_tech_request_context->get_converted_source_keys( IMPORTING es_key_values = ls_prod_bild ).
+
+**********************************************************************
+*& wenn aus Product URL mit TOIMAGES kommt, bekommt lv_where product id in where Bedienung
+*& wenn ProductSet gefragt is, ist lv_where leer, sodass alle Image geliefert werden
+**********************************************************************
+    IF  lt_nav_path IS NOT INITIAL.
+      READ TABLE lt_nav_path INTO DATA(ls_nav_path) WITH KEY nav_prop = 'TOIMAGES'.
+      IF sy-subrc EQ 0.
+        lv_where = |( productid = '{ ls_prod_bild-productid }' )|.
+      ENDIF.
+    ENDIF.
+
+    SELECT *
+      FROM /uniq/prd_bilder
+      INTO CORRESPONDING FIELDS OF TABLE @et_entityset
+     WHERE (lv_where).
+
   ENDMETHOD.
 
 
