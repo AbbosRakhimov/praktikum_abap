@@ -57,9 +57,12 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
 
   METHOD /iwbep/if_mgw_appl_srv_runtime~create_stream.
 
-    DATA: ls_prd_bild TYPE /uniq/prd_bilder,
-          ls_media    TYPE ty_s_media_resource,
-          ls_prd      TYPE /uniq/at_prd.
+    DATA: ls_prd_bild          TYPE /uniq/prd_bilder,
+          ls_media             TYPE ty_s_media_resource,
+          ls_request_context   TYPE /iwbep/if_mgw_core_srv_runtime=>ty_s_mgw_request_context,  "is_request_details
+          lo_entity_descriptor TYPE REF TO /iwbep/cl_mgw_expand_node,  "lo_entity_descriptor ?= ls_request_context-technical_request-expand_root.
+
+          ls_prd               TYPE /uniq/at_prd.
     DATA(lt_request_details) = mr_request_details->t_uri_query_parameter.
 
 
@@ -69,11 +72,47 @@ CLASS /UNIQ/CL_ABBOS_SUPPLIE_DPC_EXT IMPLEMENTATION.
 **********************************************************************
       WHEN'Product'.
 
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
-          EXPORTING
-            textid           = /iwbep/cx_mgw_busi_exception=>business_error
-            http_status_code = '404'
-            message          = TEXT-011.
+        IF is_media_resource-mime_type = 'application/json'.
+
+
+          DATA(lo_entry_provider) = NEW
+
+                    /iwbep/cl_mgw_entry_raw_prv(
+
+                      iv_raw_data = is_media_resource-value
+                      ).
+          lo_entity_descriptor ?= ls_request_context-technical_request-expand_root.
+          me->productset_create_entity(
+            EXPORTING
+              iv_entity_name          = iv_entity_name
+              iv_entity_set_name      = iv_entity_set_name
+              iv_source_name          = iv_source_name
+              it_key_tab              = it_key_tab                  " table for name value pairs
+              io_tech_request_context = io_tech_request_context
+              it_navigation_path      = it_navigation_path                 " table of navigation paths
+              io_data_provider        = lo_entry_provider                 " MGW Entry Data Provider
+            IMPORTING
+              er_entity               = DATA(ls_entity)                  " Zurückg. Daten
+          ).
+
+          copy_data_to_ref(
+            EXPORTING
+              is_data = ls_entity
+            CHANGING
+              cr_data = er_entity
+          ).
+
+        ELSE.
+
+          RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+            EXPORTING
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = '404'
+              message          = TEXT-011.
+
+        ENDIF.
+
+
 
       WHEN'Product_Image'.
 
@@ -621,6 +660,13 @@ ENDMETHOD.
               et_category         = et_entityset
               ev_total_count      = es_response_context-inlinecount ).
 
+    IF et_entityset IS INITIAL.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-014.
+    ENDIF.
 
   ENDMETHOD.
 
@@ -960,6 +1006,14 @@ ENDMETHOD.
         et_product             = et_entityset
         ev_total_count         = es_response_context-inlinecount ).
 
+
+    IF et_entityset IS INITIAL.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = '404'
+          message          = TEXT-013.
+    ENDIF.
 
   ENDMETHOD.
 
