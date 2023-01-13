@@ -1121,6 +1121,9 @@ ENDMETHOD.
       INTO CORRESPONDING FIELDS OF TABLE @et_entityset
      WHERE (lv_where).
 
+    IF io_tech_request_context->has_inlinecount( ) EQ abap_true .
+      es_response_context-inlinecount = lines( et_entityset ).
+    ENDIF.
   ENDMETHOD.
 
 

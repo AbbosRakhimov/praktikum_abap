@@ -277,7 +277,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 *& checks whether the query parameter contains the total amount
 *& Nicht ganz korrekt: nur Parameter $filter und $orderby
 **********************************************************************
-      LOOP AT it_uri_query_parameter INTO DATA(ls_param) WHERE value CS 'Total'.
+      LOOP AT it_uri_query_parameter INTO DATA(ls_param) WHERE name CS '$orderby' OR name CS '$filter'.
         lv_totalmount = abap_true.
         EXIT.
 
@@ -303,6 +303,8 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
           LOOP AT lt_prd INTO DATA(ls_prd) WHERE (iv_sql_where).
             APPEND  ls_prd TO et_product.
           ENDLOOP.
+        ELSE.
+          MOVE-CORRESPONDING lt_prd TO et_product.
         ENDIF.
 
 *      CLEAR: ls_prd, lt_prd.
@@ -346,68 +348,40 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
         SELECT *
           FROM /uniq/at_prd
           INTO CORRESPONDING FIELDS OF TABLE @et_product
-*             UP TO @lv_maxrows ROWS
+            UP TO @lv_maxrows ROWS
          WHERE (iv_sql_where) AND categoryid IN @lt_r_categories
          ORDER BY (lv_order_by).
 
 ********************************Inlinecount**************************************
-
-        IF iv_inlinecount_set = abap_true.
-          ev_total_count = lines( et_product ).
+        IF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
+          SELECT COUNT( * )
+            FROM /uniq/at_prd
+            INTO @DATA(lv_count)
+          WHERE categoryid IN @lt_r_categories.
+          ev_total_count = lv_count.
+        ELSEIF iv_inlinecount_set = abap_true AND iv_sql_where IS NOT INITIAL.
+          SELECT COUNT( * )
+            FROM /uniq/at_prd
+           INTO @lv_count
+          WHERE (iv_sql_where) AND categoryid IN @lt_r_categories.
         ELSE.
           CLEAR ev_total_count.
+        ENDIF.
 
-        ENDIF.
 **************************TOP and SKIP********************************************
-        IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
-          DELETE et_product FROM iv_top + 1.
-          RETURN.
-        ENDIF.
         IF iv_skip IS NOT INITIAL.
-          IF lv_maxrows IS NOT INITIAL.
-            DELETE et_product FROM lv_maxrows + 1.
-          ENDIF.
           DELETE et_product TO iv_skip.
         ENDIF.
 *********************************************************************
 *& Calculte Totalamount for Product
 *********************************************************************
-
         LOOP AT et_product ASSIGNING FIELD-SYMBOL(<fs_product>).
           <fs_product>-totalamount = calculate_poduct_totalamount( iv_price = <fs_product>-price iv_quantity = <fs_product>-quantity ).
         ENDLOOP.
+**********************************************************************
+
       ENDIF.
     ENDIF.
-
-
-
-
-*          WHILE lv_maxrows > index.
-*            READ TABLE et_product INDEX sy-index INTO ls_prd.
-*            APPEND ls_prd TO lt_prd.
-*            index = index + 1.
-*          ENDWHILE.
-*          CLEAR et_product.
-**          MOVE-CORRESPONDING lt_prd TO et_product.
-*
-*    IF iv_inlinecount_set = abap_true AND iv_sql_where IS NOT INITIAL AND iv_sql_where CS 'Total'.
-*      ev_total_count = lines( lt_prd_inlinecount ).
-*    ELSEIF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
-*      SELECT COUNT( * )
-*        FROM /uniq/at_prd
-*       INTO @DATA(lv_count).
-*      ev_total_count = lv_count.
-*    ELSEIF iv_inlinecount_set = abap_true AND iv_sql_where IS NOT INITIAL.
-*      SELECT COUNT( * )
-*        FROM /uniq/at_prd
-*       INTO lv_count
-*      WHERE (iv_sql_where).
-*    ELSE.
-*      CLEAR ev_total_count
-************************delete redundant data***********************************************
-*      IF iv_skip IS NOT INITIAL.
-*        DELETE et_product TO iv_skip.
-*      ENDIF.
   ENDMETHOD.
 
 
