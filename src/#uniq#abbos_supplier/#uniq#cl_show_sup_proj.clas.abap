@@ -353,17 +353,12 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
          ORDER BY (lv_order_by).
 
 ********************************Inlinecount**************************************
-        IF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
+        IF iv_inlinecount_set = abap_true.
           SELECT COUNT( * )
             FROM /uniq/at_prd
-            INTO @DATA(lv_count)
-          WHERE categoryid IN @lt_r_categories.
-          ev_total_count = lv_count.
-        ELSEIF iv_inlinecount_set = abap_true AND iv_sql_where IS NOT INITIAL.
-          SELECT COUNT( * )
-            FROM /uniq/at_prd
-           INTO @lv_count
+           INTO @DATA(lv_count)
           WHERE (iv_sql_where) AND categoryid IN @lt_r_categories.
+          ev_total_count = lv_count.
         ELSE.
           CLEAR ev_total_count.
         ENDIF.
@@ -494,16 +489,12 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
     ENDLOOP.
 
 *********************Inlinecout**************************************************
-    IF iv_inlinecount_set = abap_true AND iv_sql_where IS INITIAL.
+    IF iv_inlinecount_set = abap_true.
       SELECT COUNT( * )
         FROM /uniq/at_sup
-        INTO @DATA(lv_count).
-      ev_total_count = lv_count.
-    ELSEIF iv_inlinecount_set = abap_true AND iv_sql_where IS NOT INITIAL..
-      SELECT COUNT( * )
-        FROM /uniq/at_sup
-        INTO lv_count
+        INTO @DATA(lv_count)
        WHERE (iv_sql_where).
+
       ev_total_count = lv_count.
     ELSE.
       CLEAR ev_total_count.

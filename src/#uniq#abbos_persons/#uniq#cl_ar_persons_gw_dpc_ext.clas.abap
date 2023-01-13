@@ -77,63 +77,21 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
       INTO @DATA(lv_pers_exists)
      WHERE personid = @ls_keys-personid.
 
-    IF lv_pers_exists = abap_true.
-
-      DELETE FROM /uniq/at_pers WHERE personid = ls_keys-personid.
-
-      IF  sy-subrc <> 0.
-        mo_context->get_message_container( )->add_message_text_only(
-          EXPORTING
-            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-            iv_msg_text               = TEXT-003
-            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-            iv_entity_type            = iv_entity_name ).
-
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-          EXPORTING
-            message_container = mo_context->get_message_container( ).
-      ENDIF.
-    ELSE.
+    IF lv_pers_exists <> abap_true.
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
           http_status_code = '404'
-          message = TEXT-004.
+          message          = TEXT-004.
     ENDIF.
-  ENDMETHOD.
 
+    DELETE FROM /uniq/at_pers WHERE personid = ls_keys-personid.
 
-  METHOD personset_get_entity.
-
-
-    DATA: ls_pers    TYPE /uniq/persons_gw_s_pers,
-          ls_entity TYPE /uniq/at_pers.
-
-**********************************************************************
-    io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_pers ).
-
-    IF ls_pers IS NOT INITIAL.
-
-      SELECT SINGLE *
-       FROM /uniq/at_pers
-       INTO CORRESPONDING FIELDS OF @ls_entity
-      WHERE personid = @ls_pers-personid.
-
-
-      MOVE-CORRESPONDING ls_entity TO er_entity.
-      MOVE-CORRESPONDING ls_entity TO er_entity-adresse.
-
-    ELSEIF ls_pers IS INITIAL.
-
-      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
-        EXPORTING
-          textid  = /iwbep/cx_mgw_busi_exception=>business_error
-          message = TEXT-001.
-    ELSE.
+    IF  sy-subrc <> 0.
       mo_context->get_message_container( )->add_message_text_only(
         EXPORTING
           iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-          iv_msg_text               = TEXT-002
+          iv_msg_text               = TEXT-003
           iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
           iv_entity_type            = iv_entity_name ).
 
@@ -141,6 +99,35 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
         EXPORTING
           message_container = mo_context->get_message_container( ).
     ENDIF.
+  ENDMETHOD.
+
+
+  METHOD personset_get_entity.
+
+
+    DATA: ls_pers   TYPE /uniq/persons_gw_s_pers,
+          ls_entity TYPE /uniq/at_pers.
+
+**********************************************************************
+    io_tech_request_context->get_converted_keys( IMPORTING es_key_values = ls_pers ).
+
+    IF ls_pers IS INITIAL.
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
+        EXPORTING
+          textid  = /iwbep/cx_mgw_busi_exception=>business_error
+          message = TEXT-001.
+    ENDIF.
+
+    SELECT SINGLE *
+     FROM /uniq/at_pers
+     INTO CORRESPONDING FIELDS OF @ls_entity
+    WHERE personid = @ls_pers-personid.
+
+
+    MOVE-CORRESPONDING ls_entity TO er_entity.
+    MOVE-CORRESPONDING ls_entity TO er_entity-adresse.
+
+
 
 **********************************************************************
 *    SELECT SINGLE *
@@ -158,7 +145,7 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
 *      er_entity-adresse = ls_adresse.
 
-  ENDMETHOD.
+ENDMETHOD.
 
 
   METHOD personset_get_entityset.
@@ -225,16 +212,11 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 **********************************************************************
     """"" ACHTUNG: INLINECOUNT muss unabhängig von TOP/SKIP Anzahl aller Elemente liefern
     """"" ACHTUNG: aber filter berücksichtigen!
-    IF io_tech_request_context->has_inlinecount( ) = abap_true AND lv_sql_where IS INITIAL.
+    IF io_tech_request_context->has_inlinecount( ) = abap_true.
       SELECT COUNT( * )
           FROM /uniq/at_pers
-          INTO @DATA(lv_count).
-      es_response_context-inlinecount = lv_count.
-    ELSEIF io_tech_request_context->has_inlinecount( ) = abap_true AND lv_sql_where IS NOT INITIAL.
-      SELECT COUNT( * )
-          FROM /uniq/at_pers
-          INTO lv_count
-        WHERE (lv_sql_where).
+          INTO @DATA(lv_count)
+         WHERE (lv_sql_where).
       es_response_context-inlinecount = lv_count.
     ELSE.
       CLEAR es_response_context-inlinecount.
@@ -318,7 +300,7 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
 
   METHOD personset_update_entity.
 
-    DATA: ls_keys   LIKE er_entity,
+    DATA: ls_keys    LIKE er_entity,
           ls_pers_db TYPE /uniq/at_pers.
 
 
@@ -340,33 +322,32 @@ CLASS /UNIQ/CL_AR_PERSONS_GW_DPC_EXT IMPLEMENTATION.
       INTO @DATA(lv_pers_exists)
      WHERE personid = @ls_keys-personid.
 
-    IF  lv_pers_exists = abap_true.
-
-      MOVE-CORRESPONDING er_entity TO ls_pers_db.
-      MOVE-CORRESPONDING er_entity-adresse TO ls_pers_db.
-
-
-      UPDATE /uniq/at_pers FROM ls_pers_db.
-
-      IF sy-subrc <> 0.
-        mo_context->get_message_container( )->add_message_text_only(
-          EXPORTING
-            iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
-            iv_msg_text               = TEXT-002
-            iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
-            iv_entity_type            = iv_entity_name ).
-
-        RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
-          EXPORTING
-            message_container = mo_context->get_message_container( ).
-      ENDIF.
-
-    ELSE.
+    IF  lv_pers_exists <> abap_true.
       RAISE EXCEPTION TYPE /iwbep/cx_mgw_busi_exception
         EXPORTING
           textid           = /iwbep/cx_mgw_busi_exception=>business_error
           http_status_code = '404'
           message          = TEXT-004.
     ENDIF.
+
+    MOVE-CORRESPONDING er_entity TO ls_pers_db.
+    MOVE-CORRESPONDING er_entity-adresse TO ls_pers_db.
+
+
+    UPDATE /uniq/at_pers FROM ls_pers_db.
+
+    IF sy-subrc <> 0.
+      mo_context->get_message_container( )->add_message_text_only(
+        EXPORTING
+          iv_msg_type               = /iwbep/if_message_container=>gcs_message_type-abort
+          iv_msg_text               = TEXT-002
+          iv_error_category         = /iwbep/if_message_container=>gcs_error_category-conflict
+          iv_entity_type            = iv_entity_name ).
+
+      RAISE EXCEPTION TYPE /iwbep/cx_mgw_tech_exception
+        EXPORTING
+          message_container = mo_context->get_message_container( ).
+    ENDIF.
+
   ENDMETHOD.
 ENDCLASS.
