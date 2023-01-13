@@ -203,7 +203,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
     ENDIF.
 
 ***********************TOP and SKIP***********************************************
-    IF lines( et_category ) >= lv_maxrows.
+
       IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
         DELETE et_category FROM iv_top + 1.
         RETURN.
@@ -214,7 +214,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
         ENDIF.
         DELETE et_category TO iv_skip.
       ENDIF.
-    ENDIF.
+
 
 
 
@@ -241,7 +241,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 
 
 
-**********************************************************************
+*************************AUTHORITY-CHECK of CATEGORYID *********************************************
     SELECT categoryid FROM /uniq/at_cat INTO TABLE @DATA(lt_cat).
 
     LOOP AT lt_cat ASSIGNING FIELD-SYMBOL(<fs_cat_check>).
@@ -275,6 +275,7 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 
 **********************************************************************
 *& checks whether the query parameter contains the total amount
+*& Nicht ganz korrekt: nur Parameter $filter und $orderby
 **********************************************************************
       LOOP AT it_uri_query_parameter INTO DATA(ls_param) WHERE value CS 'Total'.
         lv_totalmount = abap_true.
@@ -325,19 +326,18 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
         ENDIF.
 
 ********************TOP or SKIP***************************************************
-        IF lines( et_product ) >= lv_maxrows.
-          IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
-            DELETE et_product FROM iv_top + 1.
-            RETURN.
+        IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
+          DELETE et_product FROM iv_top + 1.
+          RETURN.
+        ENDIF.
+        IF iv_skip IS NOT INITIAL.
+          IF lv_maxrows IS NOT INITIAL.
+            DELETE et_product FROM lv_maxrows + 1.
           ENDIF.
-          IF iv_skip IS NOT INITIAL.
-            IF lv_maxrows IS NOT INITIAL.
-              DELETE et_product FROM lv_maxrows + 1.
-            ENDIF.
-            DELETE et_product TO iv_skip.
-          ENDIF.
+          DELETE et_product TO iv_skip.
         ENDIF.
 **********************************************************************
+
       ELSE.
 
 **********************************************************************
@@ -359,17 +359,15 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
 
         ENDIF.
 **************************TOP and SKIP********************************************
-        IF lines( et_product ) >= lv_maxrows.
-          IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
-            DELETE et_product FROM iv_top + 1.
-            RETURN.
+        IF iv_top IS NOT INITIAL AND iv_skip IS INITIAL.
+          DELETE et_product FROM iv_top + 1.
+          RETURN.
+        ENDIF.
+        IF iv_skip IS NOT INITIAL.
+          IF lv_maxrows IS NOT INITIAL.
+            DELETE et_product FROM lv_maxrows + 1.
           ENDIF.
-          IF iv_skip IS NOT INITIAL.
-            IF lv_maxrows IS NOT INITIAL.
-              DELETE et_product FROM lv_maxrows + 1.
-            ENDIF.
-            DELETE et_product TO iv_skip.
-          ENDIF.
+          DELETE et_product TO iv_skip.
         ENDIF.
 *********************************************************************
 *& Calculte Totalamount for Product
@@ -380,7 +378,6 @@ CLASS /UNIQ/CL_SHOW_SUP_PROJ IMPLEMENTATION.
         ENDLOOP.
       ENDIF.
     ENDIF.
-
 
 
 
